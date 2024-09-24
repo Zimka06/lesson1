@@ -6,10 +6,13 @@ int invert(int x);//переворот числа
 int max_3(int q, int w, int e);//функция поиска максимального числа из 3 чисел 
 void swap(int* a, int* b);
 void swap1(int& a, int& b);
+int maxAll(int& y, int x);
 int main()
 {
     int x = 5;
-    printf("%d\n");
+    int y;
+    int mxX = maxAll(y,x);
+    printf("mxX - %d summa(y) - %d\n", mxX, y);
 }
 int last_Dig(int x)
 {
@@ -68,11 +71,19 @@ void swap1(int& a, int& b)
     a = b;
     b = help;
 }
-int maxAll(int* y,int x)
+int maxAll(int& y,int x)
 {
-    int i, f, max;
+    int i = 0;
+    int f = 0;
+    int max = 0;
+    int s = 0;
     while (i < x) 
     {
-        
+        scanf_s("%d", &f);
+        if (max < f)max = f;
+        i += 1;
+        s += f;
     }
+    y = s;
+    return max;
 }
