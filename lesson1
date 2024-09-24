@@ -1,0 +1,78 @@
+int all_Dig(int x);//функция вывода всех цифр числа(упорядоченные) Вывод на экран внутри самой функции 
+int last_Dig(int x);//функция поиска последней цифры числа
+int first(int x);//функция поиска первой цифры числа
+int second(int x);//функция поиска второй цифры числа
+int invert(int x);//переворот числа
+int max_3(int q, int w, int e);//функция поиска максимального числа из 3 чисел 
+void swap(int* a, int* b);
+void swap1(int& a, int& b);
+int main()
+{
+    int x = 5;
+    printf("%d\n");
+}
+int last_Dig(int x)
+{
+    return x - x / 10 * 10;
+}
+int invert(int x)//алгоритм переворачивания исходного числа
+{
+    int y = 0;
+    while (x > 0) {
+        y = y * 10 + x % 10;
+        x /= 10;
+    }
+    return y;
+}
+int all_Dig(int x)//вывод всех цифр упорядоченного числа в столбик
+{
+    x =invert(x);//без этого алгоса выведется 84321  в столбик, а с ним 12348, т.е упорядочится 
+    while (x > 0) { 
+        printf("%2d\n", (x % 10));
+        x /= 10;
+    }
+    return 0;
+}
+int first(int x)// первая цифра числа 
+{
+    x = invert(x);
+    return x % 10;
+}
+int second(int x)// 84321 %10 = 1 - первая цифра числа 
+{
+    x = invert(x);
+    return (x % 100)/10;//84321%100 = 21 / 10 = 2 - вторая цифра числа 
+}
+int max_3(int q, int w, int e)
+{
+    int max = q;
+    if (max<w) {
+        max = w;
+    }
+    if (max < e) {
+        max = e;
+    }
+    return max;
+}
+void swap(int* a, int* b) 
+{
+    int help;
+    help = *a;
+    *a = *b;
+    *b = help;
+}
+void swap1(int& a, int& b) 
+{
+    int help;
+    help = a;
+    a = b;
+    b = help;
+}
+int maxAll(int* y,int x)
+{
+    int i, f, max;
+    while (i < x) 
+    {
+        
+    }
+}
