@@ -1,0 +1,21 @@
+#include <stdio.h>
+#include <iostream>
+int cntscr(int a, int b);
+int main()
+{
+    int a = 100;
+    int b = 200;
+    int y = cntscr(a,b);
+    printf("%d", y);
+}
+int cntscr(int a,int b)
+{
+    int i = 1;
+    while (b != a) 
+    {
+        if (a < b) b = b - a;
+        if (b < a) a = a - b;
+        i++;
+    }
+    return i;
+}
