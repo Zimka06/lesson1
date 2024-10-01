@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <iostream>
+int kolvo(int a, int b);
 int cntscr(int a, int b);
 int main()
 {
     int a = 100;
     int b = 200;
-    int y = cntscr(a,b);
+    int y = kolvo(a,b);
     printf("%d", y);
 }
 int cntscr(int a,int b)
@@ -16,6 +17,24 @@ int cntscr(int a,int b)
         if (a < b) b = b - a;
         if (b < a) a = a - b;
         i++;
+    }
+    return i;
+}
+int kolvo(int a, int b)
+{
+    int i = 1;
+    while (a != b)
+    {
+        if (a < b)
+        {
+            b -= a;
+            i++;
+        }
+        else 
+        {
+            a -= b;
+            i++; 
+        }
     }
     return i;
 }
