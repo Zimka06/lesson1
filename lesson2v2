@@ -1,0 +1,22 @@
+#include <iostream>
+#include <stdio.h>
+float del(int a, int b);
+int main()
+{
+	int a;
+	int b;
+	scanf_s("%d", &a);
+	scanf_s("%d", &b);
+	float z ;
+	z = del(a,b);
+	printf("%d - chislitel' %d - znamenatel'\n", a, b);
+	printf("%4.3f - drobnaya chast'\n",z);
+}
+float del(int a,int b)
+{
+	float c = (float)a;
+	float y;
+	c =c/ b;
+	y = c - (a / b);
+	return y;
+}
