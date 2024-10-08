@@ -1,0 +1,26 @@
+#include <iostream>
+#include <math.h>
+double ln(double x, double eps);
+int main()
+{
+    double x = -1;
+    double log;
+    while (x != 0.9) 
+    {
+        log = ln(x, 0.0001);
+        printf("%lf\n", log);
+        x += 0.1;
+    }
+}
+
+double ln(double x, double eps)
+{
+    double c = x;
+    double f = c;
+    for (int n = 2; fabs(c) > eps; n++) 
+    {
+        c = -c * x * (n - 1) / n;
+        f = f + c;
+    }
+    return f;
+}
