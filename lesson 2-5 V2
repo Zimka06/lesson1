@@ -1,0 +1,55 @@
+#include <iostream>
+#include <math.h>
+double ln(double x, double eps);
+float del(int a, int b);
+typedef unsigned short word;
+typedef unsigned char byte;
+void octRepresentation(word value);
+int main()
+{
+    double x = -1;
+    //double log;
+    int a=10;
+    int b=25;
+    word v = 178;
+    float z;
+    z = del(a, b);
+    printf("%4.3f - drobnaya chast'\n", z);
+    /*while (x != 0.9)
+    {
+        log = ln(x, 0.0001);
+        printf("%lf\n", log);
+        x += 0.1;
+    }*/
+    octRepresentation(v);
+}
+double ln(double x, double eps)
+{
+    double c = x;
+    double f = c;
+    for (int n = 2; fabs(c) > eps; n++)
+    {
+        c = -c * x * (n - 1) / n;
+        f = f + c;
+    }
+    return f;
+}
+float del(int a, int b)
+{
+    float c = (float)a;
+    float y;
+    c = c / b;
+    y = c - (a / b);
+    return y; 
+}
+byte check3Bite(word value, word k)
+{
+    return (value & (7 << k)) >> k;
+}
+void octRepresentation(word value)
+{
+    for (int k = 15; k >= 0; k -= 3) {
+        byte res = check3Bite(value, k);
+        printf("%d", res);
+    }
+}
