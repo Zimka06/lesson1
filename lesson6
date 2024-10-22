@@ -1,0 +1,30 @@
+#include <iostream>
+#include <stdio.h>
+#include <math.h>
+typedef unsigned char byte;
+typedef unsigned short word;
+int proverka(char x);
+int main()
+{
+    char str[100];
+    int y = proverka(str[100]);
+    for (int x = 64; x <= 256; x++)
+    {
+            _itoa_s(x, str, 4);//перевод числа в любую СС, строковый тип данных 
+            if (proverka(str)) continue;
+            printf(str);
+            printf("\n ");
+    }
+}
+int proverka(char* str )
+{
+   
+    for (int i = 0; i < 4; i++) 
+    {
+        for (int j = i + 1; j < 4; j++) {
+            if (str[i] == str[j])return 1;
+        }
+        
+    }
+    return 0;
+}
