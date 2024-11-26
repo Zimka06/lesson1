@@ -3,6 +3,7 @@
 #include <math.h>
 int maxCh(int* arr, int n);
 int SeriyMax(int* arr, int n);
+int readTextFileByStrings(const char* fileName);
 int main()
 {
 	int cnt = 0;
@@ -11,26 +12,27 @@ int main()
 	const int n = 4;
 	const int m = 10;
 	int arr1[m] = { 1,1,0,2,4,4,4,4,4 };
-	int arr2[n][n] = {1,2,3,4,
+	int arr2[n][n] = { 1,2,3,4,
 					  8,8,8,8,
 					  9,9,0,9,
 					  7,7,6,0 };
-	for (int j = 0; j < n; j++)
-	{
-		x = 0;
-		for (int i = 0; i < n; i++)
-			if (arr2[i][j] == 0)
-				x++;
-		if (x>0)c++;
-	}
-	printf("kolichestvo 0 stolbcov - %d",c);
-	int f = SeriyMax(arr1, m);
-	printf("\nmax seriy  - %d", f);// 3 variant
+	//for (int j = 0; j < n; j++)
+	//{
+	//	x = 0;
+	//	for (int i = 0; i < n; i++)
+	//		if (arr2[i][j] == 0)
+	//			x++;
+	//	if (x > 0)c++;
+	//}
+	//printf("kolichestvo 0 stolbcov - %d", c);
+	//int f = SeriyMax(arr1, m);
+	//printf("\nmax seriy  - %d", f);// 3 variant
 
-	int g = maxCh(arr1, m);
-	printf("\nmax for array - %d", g);
+	//int g = maxCh(arr1, m);
+	//printf("\nmax for array - %d", g);
+	int Read = readTextFileByStrings("TextFile1.txt");
 }
-int maxCh(int* arr,int n)
+int maxCh(int* arr, int n)
 {
 	int max1 = 0;
 	for (int i = 0; i < n; i++)
@@ -52,4 +54,31 @@ int SeriyMax(int* arr, int n) {
 		}
 	}
 	return max;
+}
+int validateTwo(char* str)
+{
+    char* ps = str;
+	char s[100] = { '\0' };
+    while (*ps)
+    {
+        if (scanf_s(ps, "%[0-9]", s, 100) != 0)
+        {
+            int l = strlen(s);
+            if (l != 2)return 0;
+            ps += l;
+        }
+        else ps++;
+    }
+    return 1;
+}
+int readTextFileByStrings(const char* fileName) {
+	char str[800];
+	FILE* f;
+	fopen_s(&f, fileName, "r");
+	if (!f)return -1;
+	while (fgets(str, 800, f)) {
+		puts(str);
+	}
+	fclose(f);
+	return 0;
 }
