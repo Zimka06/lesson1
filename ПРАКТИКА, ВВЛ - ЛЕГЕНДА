@@ -1,0 +1,156 @@
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+
+typedef unsigned short int word;
+typedef unsigned int dword;
+typedef unsigned char BYTE;
+
+#pragma pack(push) 
+#pragma pack(1) 
+
+struct BitMapHeader {
+    word bfType;
+    dword bfSize;
+    word bfReserved1;
+    word bfReserved2;
+    dword bfOffbits;
+    dword biSize;
+    dword biWidth;
+    dword biHeight;
+    word biPlanes;
+    word biBitCount;
+    dword biCompression;
+    dword biSizeImage;
+    dword biXPelPerMeter;
+    dword biYPelPerMeter;
+    dword biClrUsed;
+    dword biClrImportant;
+};
+
+struct tagRGBQUAD {
+    BYTE rgbBlue;
+    BYTE rgbGreen;
+    BYTE rgbRed;
+    BYTE rgbReserved;
+};
+
+#pragma pack(pop) 
+
+// Function to create a BMP header 
+void createBMPHeader(BitMapHeader* header, int width, int height) {
+  //  (* header).bfOffbits
+    header->bfType = 0x4D42;  // "BM" 
+    header->bfReserved1 = 0;
+    header->bfReserved2 = 0;
+    header->bfOffbits = 1078; // Size of header + color table = 14 + 40 + 256*4 
+    header->biSize = 40;
+    header->biWidth = width;
+    header->biHeight = height;
+    header->biPlanes = 1;
+    header->biBitCount = 8; // 256 colors 
+    header->biCompression = 0; // No compression 
+
+    int rowSize = ((width * header->biBitCount + 31) / 32) * 4; // Calculate row size with padding 
+    header->biSizeImage = rowSize * height;
+
+    header->biXPelPerMeter = 0;
+    header->biYPelPerMeter = 0;
+    header->biClrUsed = 256;
+    header->biClrImportant = 0;
+    header->bfSize = header->bfOffbits + header->biSizeImage;
+}
+
+// Function to write the BMP header to a file 
+void writeBMPHeader(FILE* f, const BitMapHeader* header) {
+    fwrite(header, sizeof(BitMapHeader), 1, f);
+}
+
+// Function to create a color palette 
+//void createColorPalette(tagRGBQUAD* palette) {
+//    for (int i = 0; i < 256; i++) {
+//        palette[i].rgbRed = i;
+//        palette[i].rgbGreen = i;
+//        palette[i].rgbBlue = i;
+//        palette[i].rgbReserved = 0;
+//    }
+//
+//    // синий 
+//    palette[0].rgbRed = 0;
+//    palette[0].rgbGreen = 0;
+//    palette[0].rgbBlue = 255;
+//    // белый 
+//    palette[1].rgbRed = 255;
+//    palette[1].rgbGreen = 255;
+//    palette[1].rgbBlue = 255;
+//    // красный
+//    palette[2].rgbRed = 255;
+//    palette[2].rgbGreen = 0;
+//    palette[2].rgbBlue = 0;
+//}
+
+// Function to write the color palette to a file 
+void writeColorPalette(FILE* f, const tagRGBQUAD* palette) {
+    fwrite(palette, sizeof(tagRGBQUAD), 256, f);
+}
+void readRGBQUAD(FILE* f, tagRGBQUAD* palitra, int size);
+int main() {
+    int width;// = 300;
+    int height; //= 200;
+    FILE* fb;
+   // char filename[] = "french_flag.bmp";
+    char filename[] = "fran.bmp";
+    errno_t err = fopen_s(&fb, filename, "r+b");
+    if (err != 0) {
+        printf("file not open\n");
+        return 1;
+    }
+
+    BitMapHeader header;
+    fread(&header, sizeof(BitMapHeader), 1, fb);
+    //createBMPHeader(&header, width, height);
+    width = header.biWidth;
+    height = header.biHeight;
+   // writeBMPHeader(fb, &header);
+
+    tagRGBQUAD palette[256];
+    readRGBQUAD(fb, palette, sizeof(BitMapHeader));
+    BYTE colorBlue;
+    BYTE colorRed;
+    for (int i = 0; i < 256; i++)
+    {
+        if (palette[i].rgbBlue == 255 && palette[i].rgbGreen == 0 && palette[i].rgbRed == 0) colorBlue = i;
+        if (palette[i].rgbBlue == 0 && palette[i].rgbGreen == 0 && palette[i].rgbRed == 255) colorRed = i;
+    }
+   // createColorPalette(palette);
+  //  writeColorPalette(fb, palette);
+
+    // Allocate image data with correct row size (including padding) 
+    int rowSize = ((width * header.biBitCount + 31) / 32) * 4;
+    BYTE* imageData = (BYTE*)malloc(header.biSizeImage);
+    //memset(imageData, 0, header.biSizeImage);
+
+    // Draw the flag 
+    for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+            BYTE colorIndex = colorBlue; // через индексы синий 
+
+            if (col >= width / 3 && col < 2 * width / 3)
+                colorIndex = 255; // через индексы белый 
+            else if (col >= 2 * width / 3)
+                colorIndex = colorRed; // через индексы красный 
+            imageData[row * rowSize + col] = colorIndex;
+        }
+    }
+    fseek(fb, header.bfOffbits, 0);
+    fwrite(imageData, header.biSizeImage, 1, fb);
+    free(imageData);
+    fclose(fb);
+    printf("French flag BMP image '%s' created successfully.\n", filename);
+    return 0;
+}
+void readRGBQUAD(FILE* f, tagRGBQUAD * palitra,int size)
+{
+    fseek(f, size, 0);
+    fread(palitra, 256 * 4, 1, f);
+}
