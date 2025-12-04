@@ -1,0 +1,463 @@
+//в calculatorModel
+package calculator.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class CalculatorModel {
+    private double currentValue;
+    private double memoryValue;
+    private List<String> calculationHistory;
+    private List<CalculatorObserver> observers;
+
+    public CalculatorModel() {
+        currentValue = 0.0;
+        memoryValue = 0.0;
+        calculationHistory = new ArrayList<>();
+        observers = new ArrayList<>();
+    }
+
+    public void addObserver(CalculatorObserver observer) {
+        observers.add(observer);
+    }
+
+    public void notifyObservers() {
+        for (CalculatorObserver observer : observers) {
+            observer.updateDisplay();
+        }
+    }
+
+    public void setCurrentValue(double value) {
+        this.currentValue = value;
+    }
+
+    public double getCurrentValue() {
+        return currentValue;
+    }
+
+    public void addHistory(String entry) {
+        calculationHistory.add(entry);
+    }
+
+    public List<String> getCalculationHistory() {
+        return new ArrayList<>(calculationHistory);
+    }
+
+    public void clear() {
+        currentValue = 0.0;
+        notifyObservers();
+    }
+
+    public void memoryStore() {
+        memoryValue = currentValue;
+    }
+
+    public void memoryRecall() {
+        currentValue = memoryValue;
+        notifyObservers();
+    }
+}
+//В CalculatorController
+package calculator.controller;
+
+import calculator.model.CalculatorModel;
+import calculator.operations.OperationBehavior;
+import calculator.view.CalculatorFrame;
+import calculator.view.CalculatorPanel;
+
+public class CalculatorController {
+    private CalculatorModel model;
+    private CalculatorState state;
+    private CalculatorFrame frame;
+    private CalculatorPanel panel;
+
+    public CalculatorController() {
+        model = new CalculatorModel();
+        state = new CalculatorState(model);
+        panel = new CalculatorPanel(this);
+        model.addObserver(panel);
+        frame = new CalculatorFrame(state, this);
+        frame.setDisplayPanel(panel);
+        frame.setVisible(true); // ← критично для отображения окна!
+    }
+
+    public void handleNumberInput(String digit) {
+        state.handleNumberInput(digit);
+    }
+
+    public void handleOperation(OperationBehavior operation) {
+        state.setCurrentOperation(operation);
+    }
+
+    public void performCalculation() {
+        state.performCalculation();
+    }
+
+    public void clearCalculator() {
+        state.clear();
+    }
+
+    public CalculatorModel getModel() {
+        return model;
+    }
+}
+// в calculatorState
+package calculator.controller;
+
+import calculator.model.CalculatorModel;
+import calculator.operations.OperationBehavior;
+import calculator.operations.AddOperation;
+
+public class CalculatorState {
+    private final CalculatorModel model;
+    private OperationBehavior currentOperation;
+    private double firstOperand;
+    private StringBuilder currentInput;
+    private boolean newInput; // true = ожидаем начало нового числа
+
+    public CalculatorState(CalculatorModel model) {
+        this.model = model;
+        this.currentOperation = new AddOperation();
+        this.firstOperand = 0.0;
+        this.currentInput = new StringBuilder("0");
+        this.newInput = true;
+    }
+
+    public void handleNumberInput(String digit) {
+        if (newInput) {
+            currentInput.setLength(0);
+            newInput = false;
+        }
+
+        // Защита от двойной точки
+        if (".".equals(digit) && currentInput.indexOf(".") != -1) {
+            return;
+        }
+        // Запрет ведущей точки → "0." допустимо
+        if (currentInput.length() == 0 && ".".equals(digit)) {
+            currentInput.append("0");
+        }
+
+        currentInput.append(digit);
+
+        try {
+            double value = Double.parseDouble(currentInput.toString());
+            model.setCurrentValue(value);
+            model.notifyObservers();
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    public void setCurrentOperation(OperationBehavior operation) {
+        // Если уже вводили число — завершаем предыдущую операцию
+        if (!newInput) {
+            performPendingOperation();
+        }
+        firstOperand = model.getCurrentValue();
+        currentOperation = operation;
+        newInput = true;
+    }
+
+    public void performCalculation() {
+        if (!newInput) {
+            performPendingOperation();
+            newInput = true;
+        }
+    }
+
+    public void clear() {
+        currentInput.setLength(0);
+        currentInput.append("0");
+        model.setCurrentValue(0.0);
+        firstOperand = 0.0;
+        currentOperation = new AddOperation();
+        newInput = true;
+        model.notifyObservers();
+    }
+
+    private void performPendingOperation() {
+        double secondOperand = model.getCurrentValue();
+        double result;
+        try {
+            result = currentOperation.execute(firstOperand, secondOperand);
+        } catch (ArithmeticException e) {
+            result = Double.NaN;
+        }
+
+        model.setCurrentValue(result);
+
+        String entry = String.format("%.2f %s %.2f = %.2f",
+            firstOperand, currentOperation.getSymbol(), secondOperand, result);
+        model.addHistory(entry);
+        model.notifyObservers();
+    }
+
+    public CalculatorModel getModel() {
+        return model;
+    }
+}
+//В OperationBehavior
+package calculator.operations;
+
+public interface OperationBehavior {
+    double execute(double a, double b);
+    String getSymbol();
+}
+//В AddOperation
+package calculator.operations;
+
+public class AddOperation implements OperationBehavior {
+    @Override
+    public double execute(double a, double b) {
+        return a + b;
+    }
+
+    @Override
+    public String getSymbol() {
+        return "+";
+    }
+}
+//в SubtructOperation
+package calculator.operations;
+
+public class SubtractOperation implements OperationBehavior {
+    @Override
+    public double execute(double a, double b) {
+        return a - b;
+    }
+
+    @Override
+    public String getSymbol() {
+        return "-";
+    }
+}
+// в MultiplyOperation
+package calculator.operations;
+
+public class MultiplyOperation implements OperationBehavior {
+    @Override
+    public double execute(double a, double b) {
+        return a * b;
+    }
+
+    @Override
+    public String getSymbol() {
+        return "×";
+    }
+}
+//В DivideOperation
+package calculator.operations;
+
+public class DivideOperation implements OperationBehavior {
+    @Override
+    public double execute(double a, double b) {
+        if (b == 0) throw new ArithmeticException("Division by zero");
+        return a / b;
+    }
+
+    @Override
+    public String getSymbol() {
+        return "÷";
+    }
+}
+//в Command
+package calculator.commands;
+
+public interface Command {
+    void execute();
+}
+//В saveCalculationCommand
+package calculator.commands;
+
+import calculator.controller.CalculatorState;
+
+import javax.swing.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
+public class SaveCalculationCommand implements Command {
+    private final CalculatorState state;
+    private final JFrame parentFrame;
+
+    public SaveCalculationCommand(CalculatorState state, JFrame parentFrame) {
+        this.state = state;
+        this.parentFrame = parentFrame;
+    }
+
+    @Override
+    public void execute() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Сохранить историю расчётов");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setSelectedFile(new java.io.File("calculations.txt"));
+
+        int result = fileChooser.showSaveDialog(parentFrame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                saveCalculations(filePath);
+                JOptionPane.showMessageDialog(parentFrame,
+                    "История сохранена:\n" + filePath,
+                    "Успешно", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(parentFrame,
+                    "Ошибка сохранения:\n" + e.getMessage(),
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void saveCalculations(String filePath) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("=== История расчётов ===\n");
+            List<String> history = state.getModel().getCalculationHistory();
+            if (history.isEmpty()) {
+                writer.write("Нет записей.\n");
+            } else {
+                for (String entry : history) {
+                    writer.write(entry);
+                    writer.write('\n');
+                }
+            }
+        }
+    }
+}
+//в CalculatorFrame
+package calculator.view;
+
+import calculator.controller.CalculatorController;
+import calculator.controller.CalculatorState;
+import calculator.commands.SaveCalculationCommand;
+
+import javax.swing.*;
+
+public class CalculatorFrame extends JFrame {
+    public CalculatorFrame(CalculatorState state, CalculatorController controller) {
+        setTitle("Калькулятор — Programming Technologies");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(360, 480);
+        setResizable(false);
+        setLocationRelativeTo(null);
+
+        setupMenu(state);
+    }
+
+    public void setDisplayPanel(JPanel panel) {
+        setContentPane(panel);
+    }
+
+    private void setupMenu(CalculatorState state) {
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("Файл");
+
+        JMenuItem saveItem = new JMenuItem("Сохранить историю...");
+        saveItem.addActionListener(e -> {
+            SaveCalculationCommand cmd = new SaveCalculationCommand(state, this);
+            cmd.execute();
+        });
+
+        JMenuItem exitItem = new JMenuItem("Выход");
+        exitItem.addActionListener(e -> System.exit(0));
+
+        fileMenu.add(saveItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitItem);
+        menuBar.add(fileMenu);
+
+        setJMenuBar(menuBar);
+    }
+}
+// в CalculatorPanel
+package calculator.view;
+
+import calculator.controller.CalculatorController;
+import calculator.model.CalculatorObserver;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+
+public class CalculatorPanel extends JPanel implements CalculatorObserver {
+    private final CalculatorController controller;
+    private final JLabel displayLabel;
+
+    public CalculatorPanel(CalculatorController controller) {
+        this.controller = controller;
+        this.displayLabel = new JLabel("0.00", SwingConstants.RIGHT);
+
+        setupUI();
+    }
+
+    private void setupUI() {
+        setLayout(new BorderLayout(5, 5));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        displayLabel.setFont(new Font("Monospaced", Font.BOLD, 28));
+        displayLabel.setOpaque(true);
+        displayLabel.setBackground(Color.WHITE);
+        displayLabel.setBorder(BorderFactory.createLoweredBevelBorder());
+        add(displayLabel, BorderLayout.NORTH);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(5, 4, 4, 4));
+
+        String[] buttons = {
+            "C", "MR", "M+", "÷",
+            "7", "8", "9", "×",
+            "4", "5", "6", "-",
+            "1", "2", "3", "+",
+            "0", ".", "±", "="
+        };
+
+        for (String text : buttons) {
+            JButton btn = new JButton(text);
+            btn.setFont(new Font("Arial", Font.BOLD, 16));
+            btn.setFocusable(false);
+
+            if ("0123456789.".contains(text)) {
+                btn.addActionListener(e -> controller.handleNumberInput(text));
+            } else {
+                btn.addActionListener(this::onOperatorClick);
+            }
+
+            // Стиль кнопок
+            if ("C".equals(text)) btn.setBackground(new Color(255, 200, 200));
+            else if ("=".equals(text)) btn.setBackground(new Color(100, 200, 100));
+            else if ("+-×÷".contains(text) || "MR M+".contains(text)) btn.setBackground(new Color(220, 220, 255));
+
+            buttonPanel.add(btn);
+        }
+
+        add(buttonPanel, BorderLayout.CENTER);
+    }
+
+    private void onOperatorClick(ActionEvent e) {
+        String cmd = e.getActionCommand();
+        switch (cmd) {
+            case "C" -> controller.clearCalculator();
+            case "+" -> controller.handleOperation(new AddOperation());
+            case "-" -> controller.handleOperation(new SubtractOperation());
+            case "×" -> controller.handleOperation(new MultiplyOperation());
+            case "÷" -> controller.handleOperation(new DivideOperation());
+            case "=" -> controller.performCalculation();
+            case "M+" -> controller.getModel().memoryStore();
+            case "MR" -> controller.getModel().memoryRecall();
+            case "±" -> {
+                double v = controller.getModel().getCurrentValue();
+                controller.getModel().setCurrentValue(-v);
+                controller.getModel().notifyObservers();
+            }
+        }
+    }
+
+    @Override
+    public void updateDisplay() {
+        double value = controller.getModel().getCurrentValue();
+        if (Double.isNaN(value)) {
+            displayLabel.setText("Error");
+        } else {
+            displayLabel.setText(String.format("%.2f", value).replace(",", "."));
+        }
+    }
+}
