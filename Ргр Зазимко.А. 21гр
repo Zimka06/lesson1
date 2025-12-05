@@ -368,8 +368,3 @@ class CalculatorPanel extends JPanel implements CalculatorObserver {
         }
     }
 }
-        } else {
-            displayLabel.setText(String.format("%.2f", value).replace(",", "."));
-        }
-    }
-}
